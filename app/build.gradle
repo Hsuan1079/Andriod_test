@@ -1,0 +1,58 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+android {
+    namespace 'com.dji.a0117videotest'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.dji.a0117videotest"
+        minSdk 23
+        targetSdk 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    packagingOptions{
+        doNotStrip "*/*/libdjivideo.so"
+        doNotStrip "*/*/libSDKRelativeJNI.so"
+        doNotStrip "*/*/libFlyForbid.so"
+        doNotStrip "*/*/libduml_vision_bokeh.so"
+        doNotStrip "*/*/libyuv2.so"
+        doNotStrip "*/*/libGroudStation.so"
+        doNotStrip "*/*/libFRCorkscrew.so"
+        doNotStrip "*/*/libUpgradeVerify.so"
+        doNotStrip "*/*/libFR.so"
+        doNotStrip "*/*/libDJIFlySafeCore.so"
+        doNotStrip "*/*/libdjifs_jni.so"
+        doNotStrip "*/*/libsfjni.so"
+        exclude 'META-INF/rxjava.properties'
+    }
+    useLibrary 'org.apache.http.legacy'
+}
+
+dependencies {
+
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+    implementation 'com.dji:dji-sdk:4.16'
+    compileOnly 'com.dji:dji-sdk-provided:4.16'
+}
