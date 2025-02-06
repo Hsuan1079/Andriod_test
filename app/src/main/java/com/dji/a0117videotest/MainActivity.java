@@ -3,41 +3,45 @@ package com.dji.a0117videotest;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.TextureView;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
-
-import android.util.Log;
-import android.widget.Toast;
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import dji.common.error.DJIError;
 import dji.common.error.DJISDKError;
-import dji.sdk.base.BaseComponent;
 import dji.sdk.base.BaseProduct;
+import dji.sdk.camera.VideoFeeder;
+import dji.sdk.codec.DJICodecManager;
 import dji.sdk.sdkmanager.DJISDKInitEvent;
 import dji.sdk.sdkmanager.DJISDKManager;
-import dji.thirdparty.afinal.core.AsyncTask;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TextureView.SurfaceTextureListener {
 
     private static final String TAG = MainActivity.class.getName();
-    public static final String FLAG_CONNECTION_CHANGE = "dji_sdk_connection_change";
-    private static BaseProduct mProduct;
+    private static final String FLAG_CONNECTION_CHANGE = "dji_sdk_connection_change";
+    private static final int REQUEST_PERMISSION_CODE = 12345;
+
+    private BaseProduct mProduct;
     private Handler mHandler;
+    private DJICodecManager codecManager;
+    private VideoStreamSender videoStreamSender;
+
+    private TextureView videoSurface;
+    private TextView statusText;
+    private Button startStreamBtn;
+    private boolean isStreaming = false; // 記錄是否正在串流
 
     private static final String[] REQUIRED_PERMISSION_LIST = new String[]{
             Manifest.permission.VIBRATE,
@@ -54,58 +58,64 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.READ_PHONE_STATE,
     };
+
     private List<String> missingPermission = new ArrayList<>();
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
-    private static final int REQUEST_PERMISSION_CODE = 12345;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        // When the compile and target version is higher than 22, please request the following permission at runtime to ensure the SDK works well.
+        // 檢查權限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkAndRequestPermissions();
         }
 
-        setContentView(R.layout.activity_main);
+        // 初始化 UI
+        videoSurface = findViewById(R.id.video_surface);
+        statusText = findViewById(R.id.statusText);
+        startStreamBtn = findViewById(R.id.startStreamBtn);
 
-        //Initialize DJI SDK Manager
-        mHandler = new Handler(Looper.getMainLooper());
+        videoSurface.setSurfaceTextureListener(this);
 
+        // 初始化 UDP 影像串流
+        String targetIP = "192.168.1.100";  // 你的電腦 IP
+        int targetPort = 5000;              // 你的電腦 UDP 接收端口
+        videoStreamSender = new VideoStreamSender(targetIP, targetPort, this);
+
+        // 設定按鈕點擊事件 (開始/停止串流)
+        startStreamBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleStreaming();
+            }
+        });
+
+        showStatus("等待 DJI 設備連接...");
     }
 
     /**
-     * Checks if there is any missing permissions, and
-     * requests runtime permission if needed.
+     * 檢查並請求權限
      */
     private void checkAndRequestPermissions() {
-        // Check for permissions
         for (String eachPermission : REQUIRED_PERMISSION_LIST) {
             if (ContextCompat.checkSelfPermission(this, eachPermission) != PackageManager.PERMISSION_GRANTED) {
                 missingPermission.add(eachPermission);
             }
         }
-        // Request for missing permissions
-        if (missingPermission.isEmpty()) {
-            startSDKRegistration();
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            showToast("Need to grant the permissions!");
+        if (!missingPermission.isEmpty()) {
             ActivityCompat.requestPermissions(this,
-                    missingPermission.toArray(new String[missingPermission.size()]),
+                    missingPermission.toArray(new String[0]),
                     REQUEST_PERMISSION_CODE);
+        } else {
+            startSDKRegistration();
         }
-
     }
 
-    /**
-     * Result of runtime permission request
-     */
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        // Check for granted permission and remove from missing list
         if (requestCode == REQUEST_PERMISSION_CODE) {
             for (int i = grantResults.length - 1; i >= 0; i--) {
                 if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
@@ -113,94 +123,129 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        // If there is enough permission, we will start the registration
         if (missingPermission.isEmpty()) {
             startSDKRegistration();
         } else {
-            showToast("Missing permissions!!!");
+            showStatus("缺少權限，無法繼續");
         }
     }
+
     private void startSDKRegistration() {
         if (isRegistrationInProgress.compareAndSet(false, true)) {
-            AsyncTask.execute(new Runnable() {
+            DJISDKManager.getInstance().registerApp(getApplicationContext(), new DJISDKManager.SDKManagerCallback() {
                 @Override
-                public void run() {
-                    showToast("registering, pls wait...");
-                    DJISDKManager.getInstance().registerApp(MainActivity.this.getApplicationContext(), new DJISDKManager.SDKManagerCallback() {
-                        @Override
-                        public void onRegister(DJIError djiError) {
-                            if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
-                                Log.d("DJI", "SDK Registration Success");
-                                DJISDKManager.getInstance().startConnectionToProduct();
-                            } else {
-                                Log.e("DJI", "SDK Registration Failed: " + djiError.getDescription());
-                            }
-                        }
+                public void onRegister(DJIError djiError) {
+                    if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
+                        DJISDKManager.getInstance().startConnectionToProduct();
+                        showStatus("SDK 註冊成功，連接 DJI 設備...");
+                    } else {
+                        showStatus("SDK 註冊失敗：" + djiError.getDescription());
+                    }
+                }
 
-                        @Override
-                        public void onProductDisconnect() {
-                            Log.d("DJI", "Product Disconnected");
-                        }
+                @Override
+                public void onProductConnect(@NonNull BaseProduct baseProduct) {
+                    showStatus("DJI 設備已連接");
+                }
 
-                        @Override
-                        public void onProductConnect(BaseProduct baseProduct) {
-                            if (baseProduct != null) {
-                                Log.d("DJI", "Product Connected: " + baseProduct.getModel().getDisplayName());
-                                showToast("DJI Device Connected: " + baseProduct.getModel().getDisplayName());
-                            } else {
-                                Log.e("DJI", "Product connection failed.");
-                                showToast("DJI Device Connection Failed");
-                            }
-                        }
+                @Override
+                public void onProductDisconnect() {
+                    showStatus("DJI 設備已斷線");
+                    stopStreaming();
+                }
+                @Override
+                public void onProductChanged(BaseProduct baseProduct) {
+                    // 🔹 這個方法現在是必須的
+                    showStatus("DJI 設備狀態變更：" + (baseProduct != null ? baseProduct.getModel().getDisplayName() : "未知設備"));
+                }
 
-                        @Override
-                        public void onProductChanged(BaseProduct baseProduct) {
-                            Log.d("DJI", "Product Changed: " + baseProduct);
-                        }
+                @Override
+                public void onComponentChange(BaseProduct.ComponentKey componentKey, dji.sdk.base.BaseComponent oldComponent, dji.sdk.base.BaseComponent newComponent) {
+                    showStatus("組件變更：" + componentKey.toString());
+                }
 
-                        @Override
-                        public void onComponentChange(BaseProduct.ComponentKey componentKey, BaseComponent oldComponent, BaseComponent newComponent) {
-                            Log.d("DJI", "Component Changed: " + componentKey);
-                        }
+                @Override
+                public void onInitProcess(DJISDKInitEvent djisdkInitEvent, int i) {
+                    showStatus("SDK 初始化中：" + djisdkInitEvent.toString());
+                }
 
-                        @Override
-                        public void onInitProcess(DJISDKInitEvent djisdkInitEvent, int i) {
-                            Log.d("DJI", "SDK Init Process: " + djisdkInitEvent);
-                        }
-
-                        @Override
-                        public void onDatabaseDownloadProgress(long current, long total) {
-                            Log.d("DJI", "Database Download Progress: " + current + "/" + total);
-                        }
-                    });
-
+                @Override
+                public void onDatabaseDownloadProgress(long current, long total) {
+                    showStatus("資料庫下載進度：" + current + "/" + total);
                 }
             });
         }
     }
-    private void notifyStatusChange() {
-        mHandler.removeCallbacks(updateRunnable);
-        mHandler.postDelayed(updateRunnable, 500);
+
+    private void toggleStreaming() {
+        if (isStreaming) {
+            stopStreaming();
+        } else {
+            startStreaming();
+        }
     }
 
-    private Runnable updateRunnable = new Runnable() {
-
-        @Override
-        public void run() {
-            Intent intent = new Intent(FLAG_CONNECTION_CHANGE);
-            sendBroadcast(intent);
+    private void startStreaming() {
+        if (!isStreaming) {
+            showStatus("開始影像串流...");
+            videoStreamSender.startStreaming();
+            isStreaming = true;
+            startStreamBtn.setText("停止串流");
         }
-    };
+    }
 
-    private void showToast(final String toastMsg) {
+    private void stopStreaming() {
+        if (isStreaming) {
+            showStatus("影像串流已停止");
+            videoStreamSender.stopStreaming();
+            isStreaming = false;
+            startStreamBtn.setText("開始串流");
+        }
+    }
 
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
+    private void showStatus(final String status) {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(getApplicationContext(), toastMsg, Toast.LENGTH_LONG).show();
+                statusText.setText("狀態：" + status);
             }
         });
-
     }
+
+    @Override
+    public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+        if (codecManager == null) {
+            codecManager = new DJICodecManager(this, surface, width, height);
+        }
+
+        // 直接綁定 Video Data Listener
+        VideoFeeder.getInstance().getPrimaryVideoFeed().addVideoDataListener((videoBuffer, size) -> {
+            if (codecManager != null) {
+                codecManager.sendDataToDecoder(videoBuffer, size);
+            }
+        });
+    }
+
+
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        if (codecManager != null) {
+            codecManager.cleanSurface();
+            codecManager = null;
+        }
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
+    @Override
+    public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
+        // 這個方法在 Surface 尺寸改變時觸發，通常不需要做額外處理
+        if (codecManager != null) {
+            codecManager.cleanSurface();
+            codecManager = new DJICodecManager(this, surface, width, height);
+        }
+    }
+
 }

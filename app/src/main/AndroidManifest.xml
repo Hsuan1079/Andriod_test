@@ -61,15 +61,15 @@
         <service android:name="dji.sdk.sdkmanager.DJIGlobalService" >
         </service>
         <activity
-            android:name=".MainActivity"
-            android:configChanges="orientation"
+            android:name=".WelcomeActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".MainActivity" />
     </application>
 
 </manifest>
