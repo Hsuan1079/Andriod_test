@@ -55,4 +55,5 @@ dependencies {
     androidTestImplementation libs.espresso.core
     implementation 'com.dji:dji-sdk:4.16'
     compileOnly 'com.dji:dji-sdk-provided:4.16'
+
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
@@ -7,39 +8,57 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- 顯示 DJI 無人機影像 -->
+    <!-- 用于显示 DJI 无人机影像的预览区域 -->
     <TextureView
         android:id="@+id/video_surface"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="16:9"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/statusText"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_container"/>
 
-    <!-- 狀態欄 -->
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="wrap_content"
+    <!-- 底部容器，不遮挡预览 -->
+    <LinearLayout
+        android:id="@+id/bottom_container"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="狀態：等待連線..."
-        android:textSize="18sp"
-        android:textColor="#FFFFFF"
+        android:orientation="vertical"
         app:layout_constraintTop_toBottomOf="@id/video_surface"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:padding="10dp"/>
+        android:padding="16dp">
 
-    <!-- 串流控制按鈕 -->
-    <Button
-        android:id="@+id/startStreamBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="開始串流"
-        android:textSize="18sp"
-        app:layout_constraintTop_toBottomOf="@id/statusText"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="20dp"/>
+        <!-- 显示 RTMP URL 的标题（初始设置为 GONE） -->
+        <TextView
+            android:id="@+id/rtmp_url_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="RTMP URL: "
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <!-- 状态显示 -->
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="状态：等待连接..."
+            android:textColor="#000000"
+            android:textSize="18sp" />
+
+        <!-- 串流控制按钮 -->
+        <Button
+            android:id="@+id/startStreamBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开始 RTMP 推流"
+            android:textSize="18sp"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
