@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
 import dji.common.error.DJIError;
 import dji.common.error.DJISDKError;
@@ -22,7 +22,7 @@ public class WelcomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
 
-        statusText = findViewById(R.id.statusText);
+        statusText = findViewById(R.id.statusTextView);
         openButton = findViewById(R.id.openButton);
 
         // 初始化 DJI SDK

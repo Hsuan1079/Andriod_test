@@ -9,7 +9,7 @@
 
     <!-- 狀態文字 -->
     <TextView
-        android:id="@+id/statusText"
+        android:id="@+id/statusTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="正在檢查 DJI 設備連接..."
@@ -27,7 +27,7 @@
         android:layout_height="wrap_content"
         android:text="Open"
         android:textSize="18sp"
-        app:layout_constraintTop_toBottomOf="@id/statusText"
+        app:layout_constraintTop_toBottomOf="@id/statusTextView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="20dp"/>

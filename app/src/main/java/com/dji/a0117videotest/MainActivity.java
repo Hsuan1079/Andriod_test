@@ -2,12 +2,11 @@ package com.dji.a0117videotest;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.InputType;
 import android.view.TextureView;
 import android.view.View;
@@ -25,7 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import dji.common.error.DJIError;
 import dji.common.error.DJISDKError;
 import dji.sdk.base.BaseProduct;
-import dji.sdk.camera.VideoFeeder;
 import dji.sdk.codec.DJICodecManager;
 import dji.sdk.sdkmanager.LiveStreamManager;
 import dji.sdk.sdkmanager.DJISDKInitEvent;
@@ -46,6 +44,8 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
     private TextView statusText;
     private TextView rtmpUrlTitle;
     private Button startStreamBtn;
+
+
 
     private static final String[] REQUIRED_PERMISSION_LIST = new String[]{
             Manifest.permission.INTERNET,
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
 
         // 初始化 UI 控件
         videoSurface = findViewById(R.id.video_surface);
-        statusText = findViewById(R.id.statusText);
+        statusText = findViewById(R.id.statusTextView);
         rtmpUrlTitle = findViewById(R.id.rtmp_url_title);
         startStreamBtn = findViewById(R.id.startStreamBtn);
 
@@ -84,7 +84,12 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
             }
         });
 
-        showStatus("等待 DJI 设备连接...");
+        showStatus("等待 DJI 設備連接...");
+        Button btnOpenControl = findViewById(R.id.btn_open_control);
+        btnOpenControl.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ControlActivity.class);
+            startActivity(intent);
+        });
     }
 
     /**
@@ -130,32 +135,32 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
                 public void onRegister(DJIError djiError) {
                     if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
                         DJISDKManager.getInstance().startConnectionToProduct();
-                        showStatus("SDK 注册成功，连接 DJI 设备...");
+                        showStatus("SDK 註冊成功，連接設備...");
                     } else {
-                        showStatus("SDK 注册失败：" + djiError.getDescription());
+                        showStatus("SDK 註冊失败：" + djiError.getDescription());
                     }
                 }
 
                 @Override
                 public void onProductConnect(@NonNull BaseProduct baseProduct) {
-                    showStatus("DJI 设备已连接");
+                    showStatus("DJI 設備已連接");
                 }
 
                 @Override
                 public void onProductDisconnect() {
-                    showStatus("DJI 设备已断线");
+                    showStatus("DJI 設備已斷線");
                     stopStreaming();
                 }
                 @Override
                 public void onProductChanged(BaseProduct baseProduct) { // 这里补充实现
-                    showStatus("DJI 设备已更换：" +
+                    showStatus("DJI 設備已更換：" +
                             (baseProduct != null ? baseProduct.getModel().getDisplayName() : "未知设备"));
                 }
 
                 @Override
                 public void onComponentChange(BaseProduct.ComponentKey componentKey,
                                               dji.sdk.base.BaseComponent oldComponent, dji.sdk.base.BaseComponent newComponent) {
-                    showStatus("组件变更：" + componentKey.toString());
+                    showStatus("組件變更：" + componentKey.toString());
                 }
 
                 @Override
@@ -165,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
 
                 @Override
                 public void onDatabaseDownloadProgress(long current, long total) {
-                    showStatus("数据库下载进度：" + current + "/" + total);
+                    showStatus("下載速度：" + current + "/" + total);
                 }
             });
         }
@@ -190,23 +195,23 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
             liveStreamManager.isLiveAudioEnabled(); // 启用音频推流
             int result = liveStreamManager.startStream();
             if (result == 0) {
-                showStatus("RTMP 推流已启动");
+                showStatus("RTMP streamimg started");
                 isStreaming = true;
-                startStreamBtn.setText("停止 RTMP 推流");
+                startStreamBtn.setText("stop streaming");
             } else {
-                showStatus("RTMP 推流启动失败: " + result);
+                showStatus("RTMP streaming failure: " + result);
             }
         } else {
-            showStatus("无法获取 LiveStreamManager");
+            showStatus("can't get LiveStreamManager");
         }
     }
 
     private void stopStreaming() {
         if (isStreaming && liveStreamManager != null) {
             liveStreamManager.stopStream();
-            showStatus("RTMP 推流已停止");
+            showStatus("RTMP stop streaming");
             isStreaming = false;
-            startStreamBtn.setText("开始 RTMP 推流");
+            startStreamBtn.setText("Start RTMP Streaming");
         }
     }
 
@@ -218,7 +223,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
         builder.setView(input);
 
-        builder.setPositiveButton("确定", (dialog, which) -> {
+        builder.setPositiveButton("確定", (dialog, which) -> {
             String url = input.getText().toString().trim();
             if (!url.isEmpty()) {
                 rtmpUrl = url;
@@ -226,7 +231,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
                 rtmpUrlTitle.setVisibility(View.VISIBLE);
                 startStreaming();
             } else {
-                showStatus("RTMP URL 不能为空！");
+                showStatus("RTMP URL can't be empty！");
             }
         });
 
@@ -234,13 +239,11 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         builder.show();
     }
 
-    private void showStatus(final String message) {
-        runOnUiThread(() -> {
-            if (statusText != null) {
-                statusText.setText("状态：" + message);
-            }
-        });
+    public void showStatus(String message) {
+        TextView statusTextView = findViewById(R.id.statusTextView);
+        statusTextView.append(message + "\n");
     }
+
 
     @Override
     public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
