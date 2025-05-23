@@ -12,6 +12,8 @@ import dji.common.flightcontroller.virtualstick.FlightControlData;
 public class DroneController {
     private FlightController flightController;
     private final Handler moveHandler = new Handler();
+    private static final float MOVEMENT_SPEED = 0.3f; // 移動速度 (m/s)
+    private static final float ROTATION_SPEED = 4.0f; // 旋轉速度 (rad/s)
 
     public DroneController() {
         // 確保無人機已連接
@@ -42,36 +44,36 @@ public class DroneController {
         }
     }
 
-    // 解析指令並控制無人機
-    public void processCommand(String command) {
-        switch (command) {
-            case "takeoff":
-                takeoff();
-                break;
-            case "land":
-                land();
-                break;
-            case "move_forward":
-                move(1.0f, 0.0f, 0.0f, 0.0f, 2000); // 向前飛行 2 秒
-                break;
-            case "move_backward":
-                move(-1.0f, 0.0f, 0.0f, 0.0f, 2000);
-                break;
-            case "move_left":
-                move(0.0f, -1.0f, 0.0f, 0.0f, 2000);
-                break;
-            case "move_right":
-                move(0.0f, 1.0f, 0.0f, 0.0f, 2000);
-                break;
-            case "rotate_left":
-                move(0.0f, 0.0f, 0.0f, -30.0f, 2000);
-                break;
-            case "rotate_right":
-                move(0.0f, 0.0f, 0.0f, 30.0f, 2000);
-                break;
-            default:
-                Log.e("DroneController", "Unknown command: " + command);
+    /**
+     * 處理距離命令
+     * @param dx 前後距離 (m)
+     * @param dy 左右距離 (m)
+     * @param dz 上下距離 (m)
+     * @param dr 旋轉角度 (rad)
+     */
+    public void processDistanceCommand(float dx, float dy, float dz, float dr) {
+        if (flightController == null) {
+            Log.e("DroneController", "FlightController 未初始化");
+            return;
         }
+
+        // 計算移動時間（基於距離和速度）
+        int moveDuration = (int) (Math.abs(dx) / MOVEMENT_SPEED * 1000);
+        int strafeDuration = (int) (Math.abs(dy) / MOVEMENT_SPEED * 1000);
+        int verticalDuration = (int) (Math.abs(dz) / MOVEMENT_SPEED * 1000);
+        int rotationDuration = (int) (Math.abs(dr) / ROTATION_SPEED * 1000);
+
+        // 計算方向
+        float pitch = dx > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED;
+        float roll = dy > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED;
+        float throttle = dz > 0 ? MOVEMENT_SPEED : -MOVEMENT_SPEED;
+        float yaw = dr > 0 ? ROTATION_SPEED : -ROTATION_SPEED;
+
+        // 執行移動
+        if (dx != 0) move(pitch, 0, 0, 0, moveDuration);
+        if (dy != 0) move(0, roll, 0, 0, strafeDuration);
+        if (dz != 0) move(0, 0, throttle, 0, verticalDuration);
+        if (dr != 0) move(0, 0, 0, yaw, rotationDuration);
     }
 
     // 無人機起飛
@@ -80,7 +82,7 @@ public class DroneController {
             flightController.startTakeoff(error -> {
                 if (error == null) {
                     Log.d("DroneController", "Takeoff successful");
-                    enableVirtualStickMode(); // 起飛後重新啟用 Virtual Stick
+                    enableVirtualStickMode();
                 } else {
                     Log.e("DroneController", "Takeoff failed: " + error.getDescription());
                 }
@@ -102,7 +104,7 @@ public class DroneController {
     }
 
     // 控制無人機移動
-    public void move(float pitch, float roll, float throttle, float yaw, int duration) {
+    private void move(float pitch, float roll, float throttle, float yaw, int duration) {
         if (flightController != null) {
             Runnable moveRunnable = new Runnable() {
                 private long startTime = System.currentTimeMillis();
