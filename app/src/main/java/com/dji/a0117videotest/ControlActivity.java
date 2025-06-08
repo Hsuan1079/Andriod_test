@@ -96,10 +96,10 @@ public class ControlActivity extends AppCompatActivity {
             float dz = parseDistance(parts[5], MAX_LINEAR_DISTANCE);  // 上下距離
 
             // 使用無人機控制器處理距離命令
-            droneController.processDistanceCommand(dx, dy, dz, dr);
+            droneController.processDistanceCommand(dy, dx, dr, dz);
             
-            updateStatus(String.format("距離命令: dx=%.2f, dy=%.2f, dz=%.2f, dr=%.2f", 
-                dx, dy, dz, dr));
+            updateStatus(String.format("距離命令: dx=%.2f, dy=%.2f, dr=%.2f, dz=%.2f", 
+                dy, dx, dr, dz));
         } catch (Exception e) {
             updateStatus("處理命令時發生錯誤: " + e.getMessage());
         }

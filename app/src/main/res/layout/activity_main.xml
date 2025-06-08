@@ -97,12 +97,111 @@
                 android:textSize="16sp" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/btn_open_control"
+
+        <!-- Direction Control Buttons -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="開啟測試控制介面"
-            android:layout_marginTop="10dp" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="10dp">
+
+            <!-- Forward/Backward Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_forward"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↑"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+            </LinearLayout>
+
+            <!-- Left/Right Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_left"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="←"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+
+                <Button
+                    android:id="@+id/btn_backward"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↓"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+
+                <Button
+                    android:id="@+id/btn_right"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="→"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+            </LinearLayout>
+
+            <!-- Up/Down Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_up"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↑"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+
+                <Button
+                    android:id="@+id/btn_down"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↓"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+            </LinearLayout>
+
+            <!-- Rotate Left/Right Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_rotate_left"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↺"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+
+                <Button
+                    android:id="@+id/btn_rotate_right"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↻"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+            </LinearLayout>
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -47,6 +47,17 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
     private Button startStreamBtn;
     private Button resetRtmpBtn;
     private Button resetTcpBtn;
+    private Button btnOpenControl;
+
+    // Direction control buttons
+    private Button btnForward;
+    private Button btnBackward;
+    private Button btnLeft;
+    private Button btnRight;
+    private Button btnUp;
+    private Button btnDown;
+    private Button btnRotateLeft;
+    private Button btnRotateRight;
 
     private TCPServer tcpServer;
     private DroneController droneController;
@@ -80,12 +91,25 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         resetRtmpBtn = findViewById(R.id.resetRtmpBtn);
         resetTcpBtn = findViewById(R.id.resetTcpBtn);
 
+        // Initialize direction control buttons
+        btnForward = findViewById(R.id.btn_forward);
+        btnBackward = findViewById(R.id.btn_backward);
+        btnLeft = findViewById(R.id.btn_left);
+        btnRight = findViewById(R.id.btn_right);
+        btnUp = findViewById(R.id.btn_up);
+        btnDown = findViewById(R.id.btn_down);
+        btnRotateLeft = findViewById(R.id.btn_rotate_left);
+        btnRotateRight = findViewById(R.id.btn_rotate_right);
+        btnOpenControl = findViewById(R.id.btn_open_control);
+
         videoSurface.setSurfaceTextureListener(this);
 
         // 初始化 DroneController 和 TCPServer
         droneController = new DroneController();
         tcpServer = new TCPServer(droneController, this);
         tcpServer.start();  // 启动 TCP 服务器
+
+        setupDirectionButtons();
 
         // 按钮点击事件：开始/停止推流
         startStreamBtn.setOnClickListener(new View.OnClickListener() {
@@ -112,7 +136,6 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         });
 
         showStatus("等待 DJI 設備連接...");
-        Button btnOpenControl = findViewById(R.id.btn_open_control);
         btnOpenControl.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ControlActivity.class);
             startActivity(intent);
@@ -190,7 +213,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
                     stopStreaming();
                 }
                 @Override
-                public void onProductChanged(BaseProduct baseProduct) { // 这里补充实现
+                public void onProductChanged(BaseProduct baseProduct) {
                     showStatus("DJI 設備已更換：" +
                             (baseProduct != null ? baseProduct.getModel().getDisplayName() : "未知设备"));
                 }
@@ -317,6 +340,53 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         tcpServer.start();
         
         showStatus("TCP 服务器已重置");
+    }
+
+    private void setupDirectionButtons() {
+        // Forward
+        btnForward.setOnClickListener(v -> processCommand(0.0f, 0.6f, 0.0f, 0.0f, "Forward"));
+        
+        // Backward
+        btnBackward.setOnClickListener(v -> processCommand(0.0f, -0.6f, 0.0f, 0.0f, "Backward"));
+        
+        // Left
+        btnLeft.setOnClickListener(v -> processCommand(-0.6f, 0.0f, 0.0f, 0.0f, "Left"));
+        
+        // Right
+        btnRight.setOnClickListener(v -> processCommand(0.6f, 0.0f, 0.0f, 0.0f, "Right"));
+        
+        // Up
+        btnUp.setOnClickListener(v -> processCommand(0.0f, 0.0f, 0.0f, 0.6f, "Up"));
+        
+        // Down
+        btnDown.setOnClickListener(v -> processCommand(0.0f, 0.0f, 0.0f, -0.6f, "Down"));
+        
+        // Rotate Left
+        btnRotateLeft.setOnClickListener(v -> processCommand(0.0f, 0.0f, -8.0f, 0.0f, "Rotate Left"));
+        
+        // Rotate Right
+        btnRotateRight.setOnClickListener(v -> processCommand(0.0f, 0.0f, 8.0f, 0.0f, "Rotate Right"));
+    }
+
+    /**
+     * Process a command and log it
+     * @param dy Left/Right distance (±0.6 m)
+     * @param dx Forward/Backward distance (±0.6 m)
+     * @param dr Rotation angle (±8.0 rad)
+     * @param dz Up/Down distance (±0.6 m)
+     * @param source Source of the command (for logging)
+     */
+    public void processCommand(float dy, float dx, float dr, float dz, String source) {
+        // Format the command string
+        String command = String.format("2,Custom,%.1f,%.1f,%.1f,%.1f", dy, dx, dr, dz);
+        
+        // Log the command
+        showStatus(String.format("[%s] Command: %s", source, command));
+        
+        // Process the command using the existing method
+        if (droneController != null) {
+            droneController.processDistanceCommand(dy, dx, dr, dz);
+        }
     }
 
     @Override
