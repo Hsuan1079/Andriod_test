@@ -344,16 +344,16 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
 
     private void setupDirectionButtons() {
         // Forward
-        btnForward.setOnClickListener(v -> processCommand(0.0f, 0.6f, 0.0f, 0.0f, "Forward"));
+        btnForward.setOnClickListener(v -> processCommand(0.6f, 0.0f, 0.0f, 0.0f, "Forward"));
         
         // Backward
-        btnBackward.setOnClickListener(v -> processCommand(0.0f, -0.6f, 0.0f, 0.0f, "Backward"));
+        btnBackward.setOnClickListener(v -> processCommand(-0.6f, 0.0f, 0.0f, 0.0f, "Backward"));
         
         // Left
-        btnLeft.setOnClickListener(v -> processCommand(-0.6f, 0.0f, 0.0f, 0.0f, "Left"));
+        btnLeft.setOnClickListener(v -> processCommand(0.0f, -0.6f, 0.0f, 0.0f, "Left"));
         
         // Right
-        btnRight.setOnClickListener(v -> processCommand(0.6f, 0.0f, 0.0f, 0.0f, "Right"));
+        btnRight.setOnClickListener(v -> processCommand(0.0f, 0.6f, 0.0f, 0.0f, "Right"));
         
         // Up
         btnUp.setOnClickListener(v -> processCommand(0.0f, 0.0f, 0.0f, 0.6f, "Up"));
@@ -376,16 +376,16 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
      * @param dz Up/Down distance (±0.6 m)
      * @param source Source of the command (for logging)
      */
-    public void processCommand(float dy, float dx, float dr, float dz, String source) {
+    public void processCommand(float dx, float dy, float dr, float dz, String source) {
         // Format the command string
-        String command = String.format("2,Custom,%.1f,%.1f,%.1f,%.1f", dy, dx, dr, dz);
+        String command = String.format("2,Custom,%.1f,%.1f,%.1f,%.1f", dx, dy, dr, dz);
         
         // Log the command
         showStatus(String.format("[%s] Command: %s", source, command));
         
         // Process the command using the existing method
         if (droneController != null) {
-            droneController.processDistanceCommand(dy, dx, dr, dz);
+            droneController.processDistanceCommand(dx, dy, dr, dz);
         }
     }
 
