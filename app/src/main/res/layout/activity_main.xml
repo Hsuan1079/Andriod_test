@@ -40,30 +40,168 @@
             android:textSize="16sp"
             android:visibility="gone" />
 
-        <!-- 状态显示 -->
-        <TextView
-            android:id="@id/statusTextView"
+        <!-- 状态显示 - 使用 ScrollView 包装 -->
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:textColor="#000000"
-            android:padding="10dp"
-            android:scrollbars="vertical"/>
+            android:layout_height="120dp"
+            android:background="#F5F5F5"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp">
 
-        <!-- 串流控制按钮 -->
-        <Button
-            android:id="@+id/startStreamBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="开始 RTMP 推流"
-            android:textSize="18sp"
-            android:layout_gravity="center"
-            android:layout_marginTop="20dp" />
-        <Button
-            android:id="@+id/btn_open_control"
+            <TextView
+                android:id="@id/statusTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:padding="8dp"
+                android:scrollbars="vertical"
+                android:fadeScrollbars="false"
+                android:scrollbarStyle="outsideOverlay"
+                android:maxLines="1000"
+                android:verticalScrollbarPosition="right"/>
+        </ScrollView>
+
+        <!-- 按钮容器 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="開啟測試控制介面" />
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="10dp">
+
+            <!-- 串流控制按钮 -->
+            <Button
+                android:id="@+id/startStreamBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="开始 RTMP 推流"
+                android:textSize="16sp"
+                android:layout_marginEnd="8dp" />
+
+            <!-- RTMP 重置按钮 -->
+            <Button
+                android:id="@+id/resetRtmpBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="重置 RTMP"
+                android:textSize="16sp"
+                android:layout_marginEnd="8dp" />
+
+            <!-- TCP 重置按钮 -->
+            <Button
+                android:id="@+id/resetTcpBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="重置 TCP"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+
+        <!-- Direction Control Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="10dp">
+
+            <!-- Forward/Backward Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_forward"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↑"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+            </LinearLayout>
+
+            <!-- Left/Right Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_left"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="←"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+
+                <Button
+                    android:id="@+id/btn_backward"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↓"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+
+                <Button
+                    android:id="@+id/btn_right"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="→"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+            </LinearLayout>
+
+            <!-- Up/Down Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_up"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↑"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+
+                <Button
+                    android:id="@+id/btn_down"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↓"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+            </LinearLayout>
+
+            <!-- Rotate Left/Right Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_rotate_left"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↺"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+
+                <Button
+                    android:id="@+id/btn_rotate_right"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="↻"
+                    android:textSize="20sp"
+                    android:layout_margin="4dp" />
+            </LinearLayout>
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -6,52 +6,13 @@
     android:padding="20dp"
     android:gravity="center">
 
-    <Button
-        android:id="@+id/btn_takeoff"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="起飛 (Take Off)" />
-
-    <Button
-        android:id="@+id/btn_land"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="降落 (Land)" />
-
-    <Button
-        android:id="@+id/btn_move_forward"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="向前移動" />
-
-    <Button
-        android:id="@+id/btn_move_backward"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="向後移動" />
-
-    <Button
-        android:id="@+id/btn_move_left"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="向左移動" />
-
-    <Button
-        android:id="@+id/btn_move_right"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="向右移動" />
-
-    <Button
-        android:id="@+id/btn_rotate_left"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="左轉 (Rotate Left)" />
-
-    <Button
-        android:id="@+id/btn_rotate_right"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="右轉 (Rotate Right)" />
+        android:text="正在連接到伺服器..."
+        android:textSize="16sp"
+        android:gravity="center"
+        android:layout_margin="16dp" />
 
 </LinearLayout>

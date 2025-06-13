@@ -12,6 +12,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,8 +45,22 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
     private TextView statusText;
     private TextView rtmpUrlTitle;
     private Button startStreamBtn;
+    private Button resetRtmpBtn;
+    private Button resetTcpBtn;
+    private Button btnOpenControl;
 
+    // Direction control buttons
+    private Button btnForward;
+    private Button btnBackward;
+    private Button btnLeft;
+    private Button btnRight;
+    private Button btnUp;
+    private Button btnDown;
+    private Button btnRotateLeft;
+    private Button btnRotateRight;
 
+    private TCPServer tcpServer;
+    private DroneController droneController;
 
     private static final String[] REQUIRED_PERMISSION_LIST = new String[]{
             Manifest.permission.INTERNET,
@@ -73,8 +88,28 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         statusText = findViewById(R.id.statusTextView);
         rtmpUrlTitle = findViewById(R.id.rtmp_url_title);
         startStreamBtn = findViewById(R.id.startStreamBtn);
+        resetRtmpBtn = findViewById(R.id.resetRtmpBtn);
+        resetTcpBtn = findViewById(R.id.resetTcpBtn);
+
+        // Initialize direction control buttons
+        btnForward = findViewById(R.id.btn_forward);
+        btnBackward = findViewById(R.id.btn_backward);
+        btnLeft = findViewById(R.id.btn_left);
+        btnRight = findViewById(R.id.btn_right);
+        btnUp = findViewById(R.id.btn_up);
+        btnDown = findViewById(R.id.btn_down);
+        btnRotateLeft = findViewById(R.id.btn_rotate_left);
+        btnRotateRight = findViewById(R.id.btn_rotate_right);
+        btnOpenControl = findViewById(R.id.btn_open_control);
 
         videoSurface.setSurfaceTextureListener(this);
+
+        // 初始化 DroneController 和 TCPServer
+        droneController = new DroneController();
+        tcpServer = new TCPServer(droneController, this);
+        tcpServer.start();  // 启动 TCP 服务器
+
+        setupDirectionButtons();
 
         // 按钮点击事件：开始/停止推流
         startStreamBtn.setOnClickListener(new View.OnClickListener() {
@@ -84,12 +119,38 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
             }
         });
 
+        // RTMP 重置按钮点击事件
+        resetRtmpBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetRtmpConnection();
+            }
+        });
+
+        // TCP 重置按钮点击事件
+        resetTcpBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetTcpConnection();
+            }
+        });
+
         showStatus("等待 DJI 設備連接...");
-        Button btnOpenControl = findViewById(R.id.btn_open_control);
         btnOpenControl.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ControlActivity.class);
             startActivity(intent);
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (tcpServer != null) {
+            tcpServer.stopServer();
+        }
+        if (isStreaming && liveStreamManager != null) {
+            liveStreamManager.stopStream();
+        }
     }
 
     /**
@@ -152,7 +213,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
                     stopStreaming();
                 }
                 @Override
-                public void onProductChanged(BaseProduct baseProduct) { // 这里补充实现
+                public void onProductChanged(BaseProduct baseProduct) {
                     showStatus("DJI 設備已更換：" +
                             (baseProduct != null ? baseProduct.getModel().getDisplayName() : "未知设备"));
                 }
@@ -241,9 +302,92 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
 
     public void showStatus(String message) {
         TextView statusTextView = findViewById(R.id.statusTextView);
+        ScrollView scrollView = (ScrollView) statusTextView.getParent();
+        
+        // Append the new message
         statusTextView.append(message + "\n");
+        
+        // Scroll to the bottom
+        scrollView.post(() -> {
+            scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+        });
     }
 
+    private void resetRtmpConnection() {
+        // 停止当前流
+        if (isStreaming && liveStreamManager != null) {
+            liveStreamManager.stopStream();
+            isStreaming = false;
+        }
+        
+        // 重置 RTMP URL
+        rtmpUrl = "";
+        rtmpUrlTitle.setText("RTMP URL: ");
+        rtmpUrlTitle.setVisibility(View.GONE);
+        startStreamBtn.setText("开始 RTMP 推流");
+        
+        showStatus("RTMP 连接已重置");
+    }
+
+    private void resetTcpConnection() {
+        // 停止当前 TCP 服务器
+        if (tcpServer != null) {
+            tcpServer.stopServer();
+        }
+        
+        // 创建新的 TCP 服务器实例
+        tcpServer = new TCPServer(droneController, this);
+        tcpServer.start();
+        
+        showStatus("TCP 服务器已重置");
+    }
+
+    private void setupDirectionButtons() {
+        // Forward
+        btnForward.setOnClickListener(v -> processCommand(0.0f, 0.6f, 0.0f, 0.0f, "Forward"));
+        
+        // Backward
+        btnBackward.setOnClickListener(v -> processCommand(0.0f, -0.6f, 0.0f, 0.0f, "Backward"));
+        
+        // Left
+        btnLeft.setOnClickListener(v -> processCommand(-0.6f, 0.0f, 0.0f, 0.0f, "Left"));
+        
+        // Right
+        btnRight.setOnClickListener(v -> processCommand(0.6f, 0.0f, 0.0f, 0.0f, "Right"));
+        
+        // Up
+        btnUp.setOnClickListener(v -> processCommand(0.0f, 0.0f, 0.0f, 0.6f, "Up"));
+        
+        // Down
+        btnDown.setOnClickListener(v -> processCommand(0.0f, 0.0f, 0.0f, -0.6f, "Down"));
+        
+        // Rotate Left
+        btnRotateLeft.setOnClickListener(v -> processCommand(0.0f, 0.0f, -8.0f, 0.0f, "Rotate Left"));
+        
+        // Rotate Right
+        btnRotateRight.setOnClickListener(v -> processCommand(0.0f, 0.0f, 8.0f, 0.0f, "Rotate Right"));
+    }
+
+    /**
+     * Process a command and log it
+     * @param dy Left/Right distance (±0.6 m)
+     * @param dx Forward/Backward distance (±0.6 m)
+     * @param dr Rotation angle (±8.0 rad)
+     * @param dz Up/Down distance (±0.6 m)
+     * @param source Source of the command (for logging)
+     */
+    public void processCommand(float dy, float dx, float dr, float dz, String source) {
+        // Format the command string
+        String command = String.format("2,Custom,%.1f,%.1f,%.1f,%.1f", dy, dx, dr, dz);
+        
+        // Log the command
+        showStatus(String.format("[%s] Command: %s", source, command));
+        
+        // Process the command using the existing method
+        if (droneController != null) {
+            droneController.processDistanceCommand(dy, dx, dr, dz);
+        }
+    }
 
     @Override
     public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
