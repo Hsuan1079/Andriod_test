@@ -19,90 +19,29 @@ public class DroneController {
     private static final float ROTATION_SPEED = 4.0f;
 
     public DroneController() {
-        // Initialize DJI SDK
-        DJISDKManager.getInstance().registerApp(null, new DJISDKManager.SDKManagerCallback() {
-            @Override
-            public void onRegister(DJIError djiError) {
-                if (djiError == null) {
-                    Log.d("DroneController", "SDK registered successfully");
-                    DJISDKManager.getInstance().startConnectionToProduct();
-                } else {
-                    Log.e("DroneController", "SDK registration failed: " + djiError.getDescription());
-                }
-            }
-
-            @Override
-            public void onProductConnect(BaseProduct baseProduct) {
-                if (baseProduct instanceof Aircraft) {
-                    Aircraft aircraft = (Aircraft) baseProduct;
-                    flightController = aircraft.getFlightController();
-                    if (flightController != null) {
-                        Log.d("DroneController", "FlightController initialized");
-                        enableVirtualStickMode();
-                    }
-                }
-            }
-
-            @Override
-            public void onProductDisconnect() {
-                Log.d("DroneController", "Product disconnected");
-            }
-
-            @Override
-            public void onProductChanged(BaseProduct baseProduct) {}
-
-            @Override
-            public void onComponentChange(BaseProduct.ComponentKey componentKey, BaseComponent oldComponent, BaseComponent newComponent) {}
-
-            @Override
-            public void onInitProcess(DJISDKInitEvent djisdkInitEvent, int progress) {}
-
-            @Override
-            public void onDatabaseDownloadProgress(long current, long total) {}
-        });
+        // 確保無人機已連接
+        if (DJISDKManager.getInstance().getProduct() instanceof Aircraft) {
+            Aircraft aircraft = (Aircraft) DJISDKManager.getInstance().getProduct();
+            flightController = aircraft.getFlightController();
+        }
+        if (flightController != null) {
+            Log.d("DroneController", "FlightController 已初始化");
+            enableVirtualStickMode();
+        } else {
+            Log.e("DroneController", "無人機未連接，FlightController 初始化失敗");
+        }
     }
 
     private void enableVirtualStickMode() {
         if (flightController != null) {
-            boolean isAvailable = flightController.isVirtualStickControlModeAvailable();
-            if (!isAvailable) {
-                Log.e("DroneController", "❌ Virtual stick control is not available on this aircraft");
-                return;
-            }
-
             flightController.setVirtualStickModeEnabled(true, error -> {
-                if (error != null) {
-                    Log.e("DroneController", "❌ Failed to enable virtual stick mode: " + error.getDescription());
-                    return;
+                if (error == null) {
+                    Log.d("DroneController", "✅ Virtual Stick Mode 啟用成功");
+                    flightController.setVirtualStickAdvancedModeEnabled(true);
+                } else {
+                    Log.e("DroneController", "❌ Virtual Stick Mode 啟用失敗: " + error.getDescription());
                 }
-
-                flightController.getVirtualStickModeEnabled(new CommonCallbacks.CompletionCallbackWith<Boolean>() {
-                    @Override
-                    public void onSuccess(Boolean isEnabled) {
-                        if (!isEnabled) {
-                            Log.e("DroneController", "❌ Virtual stick mode is not enabled");
-                            return;
-                        }
-
-                        flightController.setVirtualStickAdvancedModeEnabled(true);
-                        
-                        boolean isAdvancedEnabled = flightController.isVirtualStickAdvancedModeEnabled();
-                        if (!isAdvancedEnabled) {
-                            Log.e("DroneController", "❌ Advanced mode is not enabled");
-                            return;
-                        }
-
-                        Log.d("DroneController", "✅ Virtual Stick Mode and Advanced Mode successfully enabled");
-                    }
-
-                    @Override
-                    public void onFailure(DJIError error) {
-                        Log.e("DroneController", "❌ Failed to verify virtual stick mode: " + error.getDescription());
-                    }
-                });
             });
-        } else {
-            Log.e("DroneController", "❌ FlightController is null");
         }
     }
 

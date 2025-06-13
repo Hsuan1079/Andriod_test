@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
     private Button startStreamBtn;
     private Button resetRtmpBtn;
     private Button resetTcpBtn;
-    private Button btnOpenControl;
+    // private Button btnOpenControl;
 
     // Direction control buttons
     private Button btnForward;
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         btnDown = findViewById(R.id.btn_down);
         btnRotateLeft = findViewById(R.id.btn_rotate_left);
         btnRotateRight = findViewById(R.id.btn_rotate_right);
-        btnOpenControl = findViewById(R.id.btn_open_control);
+        // btnOpenControl = findViewById(R.id.btn_open_control);
 
         videoSurface.setSurfaceTextureListener(this);
 
@@ -135,11 +135,11 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
             }
         });
 
-        showStatus("等待 DJI 設備連接...");
+        /*showStatus("等待 DJI 設備連接...");
         btnOpenControl.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ControlActivity.class);
             startActivity(intent);
-        });
+        });*/
     }
 
     @Override
