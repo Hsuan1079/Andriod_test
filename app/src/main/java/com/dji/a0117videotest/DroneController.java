@@ -20,8 +20,8 @@ import dji.common.flightcontroller.virtualstick.FlightCoordinateSystem;
 public class DroneController {
     private FlightController flightController;
     private final Handler moveHandler = new Handler();
-    private static final float MOVEMENT_SPEED = 0.6f;
-    private static final float ROTATION_SPEED = 6.0f;
+    private static final float MOVEMENT_SPEED = 0.2f;
+    private static final float ROTATION_SPEED = 3.0f;
 
     public DroneController() {
         // 確保無人機已連接
@@ -58,8 +58,8 @@ public class DroneController {
 
     /**
      * 處理距離命令
-     * @param dx 左右距離 (m)
-     * @param dy 前後距離 (m)
+     * @param dx 前後距離 (m)
+     * @param dy 左右距離 (m)
      * @param dr 旋轉角度 (rad)
      * @param dz 上下距離 (m)
      */

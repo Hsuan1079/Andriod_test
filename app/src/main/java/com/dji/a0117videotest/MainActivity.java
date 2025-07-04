@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.InputType;
 import android.view.TextureView;
 import android.view.View;
@@ -29,6 +30,9 @@ import dji.sdk.codec.DJICodecManager;
 import dji.sdk.sdkmanager.LiveStreamManager;
 import dji.sdk.sdkmanager.DJISDKInitEvent;
 import dji.sdk.sdkmanager.DJISDKManager;
+import dji.sdk.sdkmanager.LiveVideoResolution;
+import dji.common.util.CommonCallbacks;
+import dji.sdk.products.Aircraft;
 
 public class MainActivity extends AppCompatActivity implements TextureView.SurfaceTextureListener {
 
@@ -132,14 +136,9 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
             @Override
             public void onClick(View v) {
                 resetTcpConnection();
+                logVideoInfo();
             }
         });
-
-        /*showStatus("等待 DJI 設備連接...");
-        btnOpenControl.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ControlActivity.class);
-            startActivity(intent);
-        });*/
     }
 
     @Override
@@ -204,11 +203,13 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
 
                 @Override
                 public void onProductConnect(@NonNull BaseProduct baseProduct) {
+                    mProduct = baseProduct;
                     showStatus("DJI 設備已連接");
                 }
 
                 @Override
                 public void onProductDisconnect() {
+                    mProduct = null;
                     showStatus("DJI 設備已斷線");
                     stopStreaming();
                 }
@@ -344,16 +345,16 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
 
     private void setupDirectionButtons() {
         // Forward
-        btnForward.setOnClickListener(v -> processCommand(0.6f, 0.0f, 0.0f, 0.0f, "Forward"));
+        btnForward.setOnClickListener(v -> processCommand(0.0f, 0.6f, 0.0f, 0.0f, "Forward"));
         
         // Backward
-        btnBackward.setOnClickListener(v -> processCommand(-0.6f, 0.0f, 0.0f, 0.0f, "Backward"));
+        btnBackward.setOnClickListener(v -> processCommand(0.0f, -0.6f, 0.0f, 0.0f, "Backward"));
         
         // Left
-        btnLeft.setOnClickListener(v -> processCommand(0.0f, -0.6f, 0.0f, 0.0f, "Left"));
+        btnLeft.setOnClickListener(v -> processCommand(-0.6f, 0.0f, 0.0f, 0.0f, "Left"));
         
         // Right
-        btnRight.setOnClickListener(v -> processCommand(0.0f, 0.6f, 0.0f, 0.0f, "Right"));
+        btnRight.setOnClickListener(v -> processCommand(0.6f, 0.0f, 0.0f, 0.0f, "Right"));
         
         // Up
         btnUp.setOnClickListener(v -> processCommand(0.0f, 0.0f, 0.0f, 0.6f, "Up"));
@@ -368,10 +369,54 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         btnRotateRight.setOnClickListener(v -> processCommand(0.0f, 0.0f, 8.0f, 0.0f, "Rotate Right"));
     }
 
+    private void logVideoInfo() {
+        showStatus("Attempting to get video info...");
+        
+        if (mProduct == null) {
+            showStatus("Error: No DJI product connected");
+            return;
+        }
+
+        if (!(mProduct instanceof Aircraft)) {
+            showStatus("Error: Connected product is not an aircraft");
+            return;
+        }
+
+        Aircraft aircraft = (Aircraft) mProduct;
+        if (aircraft.getCamera() == null) {
+            showStatus("Error: No camera found on aircraft");
+            return;
+        }
+
+        LiveStreamManager liveStreamManager = DJISDKManager.getInstance().getLiveStreamManager();
+        if (liveStreamManager == null) {
+            showStatus("Error: LiveStreamManager is not available");
+            return;
+        }
+
+        try {
+            LiveVideoResolution resolution = liveStreamManager.getLiveVideoResolution();
+            showStatus("Video Resolution: " + resolution.toString());
+
+            // Check if streaming is active
+            if (liveStreamManager.isStreaming()) {
+                // Add a small delay to ensure FPS is properly initialized
+                new Handler().postDelayed(() -> {
+                    float fps = liveStreamManager.getLiveVideoFps();
+                    showStatus("Video FPS: " + fps);
+                }, 1000); // 1 second delay
+            } else {
+                showStatus("Video FPS: Not available (stream not active)");
+            }
+        } catch (Exception e) {
+            showStatus("Error getting video info: " + e.getMessage());
+        }
+    }
+
     /**
      * Process a command and log it
-     * @param dy Left/Right distance (±0.6 m)
      * @param dx Forward/Backward distance (±0.6 m)
+     * @param dy Left/Right distance (±0.6 m)
      * @param dr Rotation angle (±8.0 rad)
      * @param dz Up/Down distance (±0.6 m)
      * @param source Source of the command (for logging)

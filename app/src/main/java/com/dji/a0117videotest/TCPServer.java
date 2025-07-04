@@ -70,14 +70,26 @@ public class TCPServer extends Thread {
 
     private void handleClient(Socket clientSocket) {
         String clientIP = clientSocket.getInetAddress().getHostAddress();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
-            String command;
-            while ((command = reader.readLine()) != null) {
-                updateUI("=== Received Command ===\n" +
-                        "Time: " + getCurrentTime() + "\n" +
-                        "From: " + clientIP + "\n" +
-                        "Command: " + command);
-                processCommand(command);  // 處理命令
+        try {
+            // 設定 socket 選項
+            clientSocket.setTcpNoDelay(true);  // 禁用 Nagle 演算法
+            clientSocket.setSoLinger(true, 0);  // 立即關閉連線
+            clientSocket.setKeepAlive(true);    // 啟用 keepalive
+            
+            // 使用 unbuffered 的輸入流
+            InputStream inputStream = clientSocket.getInputStream();
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                String command = new String(buffer, 0, bytesRead).trim();
+                if (!command.isEmpty()) {
+                    updateUI("=== Received Command ===\n" +
+                            "Time: " + getCurrentTime() + "\n" +
+                            "From: " + clientIP + "\n" +
+                            "Command: " + command);
+                    processCommand(command);
+                }
             }
         } catch (IOException e) {
             updateUI("Client connection error from " + clientIP + ":\n" + e.getMessage());
@@ -95,24 +107,23 @@ public class TCPServer extends Thread {
 
     /**
      * 處理從客戶端接收到的命令
-     * 命令格式: "2,Custom,dy,dx,dr,dz"
      */
     private void processCommand(String command) {
         try {
             String[] parts = command.split(",");
-            if (parts.length != 6 || !parts[0].equals("2") || !parts[1].equals("Custom")) {
+            if (parts.length != 6) {
                 updateUI("Invalid command format:\n" + command);
                 return;
             }
 
             // 解析距離值
-            float dy = Float.parseFloat(parts[2]);  // 左右距離
-            float dx = Float.parseFloat(parts[3]);  // 前後距離
-            float dr = Float.parseFloat(parts[4]);  // 旋轉角度
-            float dz = Float.parseFloat(parts[5]);  // 上下距離
+            float dx = Float.parseFloat(parts[2]);  // 左右距離
+            float dy = Float.parseFloat(parts[3]);  // 前後距離
+            float dz = Float.parseFloat(parts[4]);  // 上下距離
+            float dr = Float.parseFloat(parts[5]);  // 旋轉角度
 
             // 使用無人機控制器處理距離命令
-            droneController.processDistanceCommand(dx, dy, dz, dr);
+            droneController.processDistanceCommand(dx, dy, dr, dz);
             updateUI("=== Executing Command ===\n" +
                     "Time: " + getCurrentTime() + "\n" +
                     "dx: " + String.format("%.2f", dx) + "\n" +
